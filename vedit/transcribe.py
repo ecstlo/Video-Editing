@@ -26,7 +26,7 @@ def transcribe(media: str | Path, model_size: str = "small", language: str | Non
 
     model = WhisperModel(model_size, device="auto", compute_type="auto")
     segments, info = model.transcribe(
-        str(media), language=language, word_timestamps=True, vad_filter=True
+        _load_audio(media), language=language, word_timestamps=True, vad_filter=True
     )
     out_segments = []
     for seg in segments:
@@ -39,6 +39,23 @@ def transcribe(media: str | Path, model_size: str = "small", language: str | Non
             {"start": round(seg.start, 3), "end": round(seg.end, 3), "text": seg.text.strip(), "words": words}
         )
     return {"source": str(media), "language": info.language, "segments": out_segments}
+
+
+def _load_audio(media: str | Path, sr: int = 16000):
+    """Decode audio with ffmpeg to 16 kHz mono float32. This avoids depending on
+    PyAV, whose versions often break faster-whisper's own decoder."""
+    import subprocess
+
+    import numpy as np
+
+    proc = subprocess.run(
+        ["ffmpeg", "-nostdin", "-v", "error", "-i", str(media), "-vn", "-ac", "1", "-ar", str(sr),
+         "-f", "f32le", "-"],
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"Could not decode audio from {media}: {proc.stderr.decode()[-500:]}")
+    return np.frombuffer(proc.stdout, dtype=np.float32).copy()
 
 
 def save(transcript: dict, path: str | Path) -> Path:
