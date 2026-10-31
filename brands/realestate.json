@@ -1,0 +1,20 @@
+{
+  "name": "Your Name Realty",
+  "handle": "@yournamerealty",
+  "logo": null,
+  "logo_position": "top-right",
+  "logo_scale": 0.16,
+  "font": null,
+  "caption_font": "Inter",
+  "primary_color": "#FFFFFF",
+  "accent_color": "#C9A227",
+  "background_color": "#0F1B2D",
+  "agent_name": "Your Name",
+  "title": "REALTOR | Your Brokerage",
+  "phone": "(555) 123-4567",
+  "email": "you@example.com",
+  "website": "yourname.com",
+  "license": "License #00000000",
+  "music": null,
+  "extra": {}
+}

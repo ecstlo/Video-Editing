@@ -1,0 +1,20 @@
+{
+  "name": "Clips Page",
+  "handle": "@yourclipspage",
+  "logo": null,
+  "logo_position": "top-right",
+  "logo_scale": 0.16,
+  "font": null,
+  "caption_font": "Inter",
+  "primary_color": "#FFFFFF",
+  "accent_color": "#FFE600",
+  "background_color": "#111111",
+  "agent_name": "",
+  "title": "",
+  "phone": "",
+  "email": "",
+  "website": "",
+  "license": "",
+  "music": null,
+  "extra": {}
+}

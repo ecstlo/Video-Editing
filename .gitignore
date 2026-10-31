@@ -1,0 +1,13 @@
+__pycache__/
+*.egg-info/
+.venv/
+output/
+footage/*
+!footage/.gitkeep
+*.mp4
+*.mov
+*.m4a
+*.wav
+*.mp3
+!assets/**/*.mp3
+.DS_Store
