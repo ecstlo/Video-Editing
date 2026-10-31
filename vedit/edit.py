@@ -13,12 +13,14 @@ from .platforms import Platform
 
 # ---------------------------------------------------------------- reframing
 
-def reframe_graph(inp: str, out: str, W: int, H: int, mode: str, src_aspect: float, focus: float = 0.5) -> str:
+def reframe_graph(inp: str, out: str, W: int, H: int, mode: str, src_aspect: float, focus: float = 0.5,
+                  zoom: float = 1.0) -> str:
     """Filtergraph fragment turning [inp] into a WxH frame at [out].
 
     modes: crop (fill frame, cut sides, `focus` 0=left..1=right),
            blur (fit whole frame over a blurred copy, the classic repost look),
            pad  (fit with black bars), auto (crop if aspect is close, else blur)
+    zoom (blur mode): enlarge the sharp foreground, trimming its sides (1.3 = 30% bigger)
     """
     target = W / H
     if mode == "auto":
@@ -39,7 +41,9 @@ def reframe_graph(inp: str, out: str, W: int, H: int, mode: str, src_aspect: flo
             f"[{inp}]split=2[{out}_bg][{out}_fg];"
             f"[{out}_bg]scale={bw}:{bh}:force_original_aspect_ratio=increase,crop={bw}:{bh},"
             f"gblur=sigma=6,eq=brightness=-0.12:saturation=1.1,scale={W}:{H}[{out}_bgb];"
-            f"[{out}_fg]scale={W}:{H}:force_original_aspect_ratio=decrease[{out}_fgs];"
+            f"[{out}_fg]scale={W}:{H}:force_original_aspect_ratio=decrease"
+            + (f",scale=iw*{zoom}:-2,crop=min(iw\\,{W}):min(ih\\,{H}):(iw-ow)*{focus}:(ih-oh)/2" if zoom != 1.0 else "")
+            + f"[{out}_fgs];"
             f"[{out}_bgb][{out}_fgs]overlay=(W-w)/2:(H-h)/2,setsar=1[{out}]"
         )
     raise ValueError(f"Unknown reframe mode '{mode}' (crop|blur|pad|auto)")
@@ -108,6 +112,7 @@ class RenderOptions:
     end: float | None = None
     mode: str = "auto"
     focus: float = 0.5
+    zoom: float = 1.0
     ass_path: str | None = None
     hook: str | None = None           # big headline text at the top of the video
     hook_seconds: float | None = None # None = whole clip
@@ -157,7 +162,7 @@ def render(src: str | Path, out: str | Path, platform: Platform, brand: Brand | 
     if opts.speed != 1.0:
         g.append(f"[0:v]setpts=PTS/{opts.speed}[vs]")
         vchain = "vs"
-    g.append(reframe_graph(vchain, "vr", W, H, opts.mode, info.aspect or 1, opts.focus))
+    g.append(reframe_graph(vchain, "vr", W, H, opts.mode, info.aspect or 1, opts.focus, opts.zoom))
     cur = "vr"
 
     post: list[str] = []
@@ -169,7 +174,9 @@ def render(src: str | Path, out: str | Path, platform: Platform, brand: Brand | 
     font = brand.font or ff.find_font()
     if opts.hook:
         enable = f"lt(t,{opts.hook_seconds})" if opts.hook_seconds else None
-        post += text_block_filters(opts.hook, font, W, H, y_frac=0.10 if H > W else 0.06, size_frac=0.06, enable=enable)
+        # TikTok-style headline: black text on a white box.
+        post += text_block_filters(opts.hook, font, W, H, y_frac=0.12 if H > W else 0.06, size_frac=0.066,
+                                   enable=enable, color="black", boxcolor="white@0.95", border=0)
     if opts.watermark and brand.handle and not brand.logo:
         size = int(min(W, H) * 0.032)
         post.append(_drawtext(brand.handle, font, size, color="white@0.85", x="(w-tw)/2", y="h*0.80", box=False))

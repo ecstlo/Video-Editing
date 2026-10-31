@@ -68,11 +68,26 @@ def load(path: str | Path) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def _merge_fragments(words: list[dict]) -> list[dict]:
+    """Whisper splits numbers and hyphenated words into pieces ("$3" ",000", "white" "-gold").
+    Glue pieces that start with , . or - back onto the previous word. Drop empty words."""
+    out: list[dict] = []
+    for w in words:
+        text = w["word"].strip()
+        if not text:
+            continue
+        if out and text[0] in ",.-" and len(text) > 1:
+            out[-1] = {**out[-1], "end": w["end"], "word": out[-1]["word"] + text}
+        else:
+            out.append({**w, "word": text})
+    return out
+
+
 def all_words(transcript: dict) -> list[dict]:
     words: list[dict] = []
     for seg in transcript.get("segments", []):
         if seg.get("words"):
-            words.extend(seg["words"])
+            words.extend(_merge_fragments(seg["words"]))
         else:  # fall back to spreading segment text evenly
             toks = seg["text"].split()
             if not toks:

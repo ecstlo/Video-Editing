@@ -85,9 +85,9 @@ def render_for_platforms(src: Path, name: str, args, start: float | None, end: f
                     ass = Path(td) / f"{p.width}x{p.height}.ass"
                     captions.write_ass(ass, win, p.width, p.height, style=args.captions, font=brand.caption_font,
                                        text_color=brand.primary_color, highlight_color=brand.accent_color,
-                                       position=args.caption_pos)
+                                       position=args.caption_pos, censor=args.censor)
                 opts = edit.RenderOptions(
-                    start=start, end=end, mode=args.mode, focus=args.focus, ass_path=str(ass) if ass else None,
+                    start=start, end=end, mode=args.mode, focus=args.focus, zoom=args.zoom, ass_path=str(ass) if ass else None,
                     hook=hook, hook_seconds=args.hook_seconds, watermark=not args.no_brand,
                     music=args.music, music_volume=args.music_volume, speed=args.speed, fade=args.fade,
                 )
@@ -247,8 +247,10 @@ def _add_render_flags(sp):
     sp.add_argument("--platforms", default="vertical", help="comma list or group: vertical, all, realestate, tiktok,reels,...")
     sp.add_argument("--captions", default="viral", choices=["viral", "clean", "minimal", "none"])
     sp.add_argument("--caption-pos", type=float, default=None, help="viral caption height 0-1 (default 0.68)")
+    sp.add_argument("--censor", action="store_true", help="bleep swear words in captions (f***), helps reach")
     sp.add_argument("--mode", default="auto", choices=["auto", "crop", "blur", "pad"], help="how to fit into the frame")
     sp.add_argument("--focus", type=float, default=0.5, help="crop mode: 0=keep left, 0.5=center, 1=keep right")
+    sp.add_argument("--zoom", type=float, default=1.0, help="blur mode: enlarge the video, e.g. 1.3")
     sp.add_argument("--brand", help="brand JSON (logo, colors, handle)")
     sp.add_argument("--no-brand", action="store_true", help="skip logo/handle watermark")
     sp.add_argument("--music", help="background music file")

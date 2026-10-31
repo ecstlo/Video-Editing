@@ -27,6 +27,22 @@ def _ass_color(hex_rgb: str, alpha: str = "00") -> str:
     return f"&H{alpha}{b}{g}{r}".upper()
 
 
+PROFANITY = ("fuck", "shit", "bitch", "cunt", "dick", "pussy", "motherfuck", "asshole", "nigga", "nigger")
+
+
+def censor_word(word: str) -> str:
+    """'fucking' -> 'f***ing'. Keeps the first letter so the caption still reads naturally."""
+    import re
+
+    def repl(m: re.Match) -> str:
+        w = m.group(0)
+        return w[0] + "*" * (len(w) - 1)
+
+    pattern = "|".join(sorted(PROFANITY, key=len, reverse=True))
+    out = re.sub(rf"(?i)({pattern})", repl, word)
+    return out
+
+
 def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("{", "(").replace("}", ")").replace("\n", " ")
 
@@ -49,6 +65,7 @@ def build_ass(
     highlight_color: str = "#FFE600",
     outline_color: str = "#000000",
     position: float | None = None,
+    censor: bool = False,
 ) -> str:
     """Create an .ass subtitle document. `position` (0-1) overrides vertical placement
     for the viral style (0.5 = middle, 0.7 = lower third)."""
@@ -72,6 +89,8 @@ Style: Main,{font},{size},{_ass_color(text_color)},{_ass_color(highlight_color)}
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     words = all_words(transcript)
+    if censor:
+        words = [{**w, "word": censor_word(w["word"])} for w in words]
     events: list[str] = []
     n = st["chunk"]
     pos_tag = ""
