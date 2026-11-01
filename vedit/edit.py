@@ -117,6 +117,8 @@ class RenderOptions:
     ass_path: str | None = None
     hook: str | None = None           # big headline text at the top of the video
     hook_seconds: float | None = None # None = whole clip
+    cta: str | None = None            # e.g. "Follow for Part 2" - replaces the hook at the end
+    cta_seconds: float = 4.0          # how long the call to action shows at the end
     watermark: bool = True            # show brand logo/handle
     music: str | None = None
     music_volume: float = 0.15
@@ -173,11 +175,19 @@ def render(src: str | Path, out: str | Path, platform: Platform, brand: Brand | 
         fontsdir = f":fontsdir='{ff.escape_filter_path(Path(brand.font).parent)}'" if brand.font else ""
         post.append(f"subtitles='{ff.escape_filter_path(opts.ass_path)}'{fontsdir}")
     font = brand.font or ff.find_font()
+    cta_start = max(0.0, clip_len - opts.cta_seconds) if opts.cta else None
     if opts.hook:
-        enable = f"lt(t,{opts.hook_seconds})" if opts.hook_seconds else None
+        hook_end = min(x for x in (opts.hook_seconds, cta_start) if x is not None) \
+            if (opts.hook_seconds or cta_start is not None) else None
+        enable = f"lt(t,{hook_end:.3f})" if hook_end is not None else None
         # TikTok-style headline: black text on a white box.
         post += text_block_filters(opts.hook, font, W, H, y_frac=0.12 if H > W else 0.06, size_frac=0.066,
                                    enable=enable, color="black", boxcolor="white@0.95", border=0)
+    if opts.cta:
+        # Call to action in the brand accent color, swapped in where the hook was.
+        post += text_block_filters(opts.cta, font, W, H, y_frac=0.12 if H > W else 0.06, size_frac=0.07,
+                                   enable=f"gte(t,{cta_start:.3f})", color="black",
+                                   boxcolor=brand.accent_color + "@0.97", border=0)
     if opts.watermark and brand.handle and not brand.logo:
         size = int(min(W, H) * 0.032)
         post.append(_drawtext(brand.handle, font, size, color="white@0.85", x="(w-tw)/2", y="h*0.80", box=False))

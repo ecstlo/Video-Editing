@@ -88,7 +88,7 @@ def render_for_platforms(src: Path, name: str, args, start: float | None, end: f
                                        position=args.caption_pos, censor=args.censor)
                 opts = edit.RenderOptions(
                     start=start, end=end, mode=args.mode, focus=args.focus, zoom=args.zoom, ass_path=str(ass) if ass else None,
-                    hook=hook, hook_seconds=args.hook_seconds, watermark=not args.no_brand,
+                    hook=hook, hook_seconds=args.hook_seconds, cta=args.cta, cta_seconds=args.cta_seconds, watermark=not args.no_brand,
                     music=args.music, music_volume=args.music_volume, speed=args.speed, fade=args.fade,
                 )
                 edit.render(src, dest, p, brand, opts)
@@ -258,6 +258,8 @@ def _add_render_flags(sp):
     sp.add_argument("--speed", type=float, default=1.0, help="e.g. 1.1 for slightly faster pacing")
     sp.add_argument("--fade", type=float, default=0.0)
     sp.add_argument("--hook-seconds", type=float, default=None, help="show hook text only for N seconds")
+    sp.add_argument("--cta", help="call to action shown at the end, e.g. 'Follow @handle for more'")
+    sp.add_argument("--cta-seconds", type=float, default=4.0, help="how long the call to action shows")
     sp.add_argument("--transcript", help="existing transcript JSON (default: <video>.transcript.json)")
     sp.add_argument("--model", default="small", help="whisper model: tiny, base, small, medium, large-v3")
     sp.add_argument("--out-dir", default="output")
