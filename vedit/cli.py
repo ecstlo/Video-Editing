@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 from . import brand as brand_mod
-from . import captions, edit, highlights, platforms, realestate, transcribe
+from . import captions, edit, explainer, highlights, platforms, realestate, transcribe
 from . import ffmpeg as ff
 
 
@@ -234,6 +234,22 @@ def cmd_brand_init(args):
     print(brand_mod.save(b, args.path))
 
 
+def cmd_explainer(args):
+    scenes = []
+    for item in args.scenes:
+        path, _, at = item.rpartition("@")
+        if not path:
+            raise ValueError(f"Scene '{item}' needs a start time, like img.png@3.5")
+        scenes.append(explainer.Scene(Path(path), _parse_time(at)))
+    audio = Path(args.voiceover)
+    transcript = None if args.no_captions else _get_transcript(audio, args.transcript, args.model)
+    p = platforms.resolve([args.platform])[0]
+    out = Path(args.output)
+    explainer.build(audio, scenes, out, p, title_image=args.title_image, headline=args.headline,
+                    transcript=transcript, music=args.music, caption_pos=args.caption_pos)
+    print(f"  -> {out}")
+
+
 def cmd_platforms(args):
     for p in platforms.PLATFORMS.values():
         lim = f"{p.max_seconds}s" if p.max_seconds else "-"
@@ -344,6 +360,16 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--brand", required=True); sp.add_argument("-o", "--output", required=True)
     sp.add_argument("--platform", default="reels"); sp.add_argument("--seconds", type=float, default=4.0)
     sp.add_argument("--headline", default="Schedule a private showing"); sp.set_defaults(fn=cmd_endcard)
+
+    sp = sub.add_parser("explainer", help="voiceover + scene images -> faceless explainer video")
+    sp.add_argument("voiceover"); sp.add_argument("--scenes", nargs="+", required=True,
+                    help="image@start_seconds for each scene, in order, e.g. car.png@3.4")
+    sp.add_argument("--title-image", help="image shown at the top for the whole video")
+    sp.add_argument("--headline", help="lines split by |, [bracketed] lines in red, e.g. 'WHY X,|[NOT Y]'")
+    sp.add_argument("--music"); sp.add_argument("--no-captions", action="store_true")
+    sp.add_argument("--caption-pos", type=float, default=0.86); sp.add_argument("--transcript")
+    sp.add_argument("--model", default="small"); sp.add_argument("--platform", default="tiktok")
+    sp.add_argument("-o", "--output", required=True); sp.set_defaults(fn=cmd_explainer)
 
     sp = sub.add_parser("brand-init", help="create a brand kit JSON to fill in")
     sp.add_argument("path"); sp.add_argument("--realestate", action="store_true"); sp.set_defaults(fn=cmd_brand_init)

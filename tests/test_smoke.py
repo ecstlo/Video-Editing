@@ -61,3 +61,9 @@ def test_render_clip(tmp_path):
     info = ff.probe(out)
     assert (info.width, info.height) == (1080, 1920)
     assert abs(info.duration - 4) < 0.2
+
+
+def test_explainer_headline_parsing():
+    from vedit.explainer import parse_headline
+
+    assert parse_headline("WHY X,|[NOT Y]") == [("WHY X,", False), ("NOT Y", True)]

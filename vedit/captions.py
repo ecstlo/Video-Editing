@@ -66,6 +66,8 @@ def build_ass(
     outline_color: str = "#000000",
     position: float | None = None,
     censor: bool = False,
+    words_per_chunk: int | None = None,
+    size_scale: float = 1.0,
 ) -> str:
     """Create an .ass subtitle document. `position` (0-1) overrides vertical placement
     for the viral style (0.5 = middle, 0.7 = lower third)."""
@@ -73,6 +75,7 @@ def build_ass(
         raise ValueError(f"Unknown caption style '{style}'. Choose: {', '.join(STYLES)}")
     st = STYLES[style]
     size = int(height * st["size"]) if width < height else int(height * st["size"] * 1.25)
+    size = int(size * size_scale)
     margin_v = int(height * st["margin_v"])
     header = f"""[Script Info]
 ScriptType: v4.00+
@@ -92,7 +95,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     if censor:
         words = [{**w, "word": censor_word(w["word"])} for w in words]
     events: list[str] = []
-    n = st["chunk"]
+    n = words_per_chunk or st["chunk"]
     pos_tag = ""
     if style == "viral":
         y = int(height * (position if position is not None else 0.68))
