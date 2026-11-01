@@ -61,6 +61,7 @@ def _drawtext(text: str, font: str, size: int, color: str = "white", x: str = "(
               box: bool = True, enable: str | None = None, boxcolor: str = "black@0.55", border: int = 3) -> str:
     parts = [
         f"fontfile='{ff.escape_filter_path(font)}'",
+        "expansion=none",  # treat % literally (e.g. "5% rule")
         f"text='{ff.escape_drawtext(text)}'",
         f"fontsize={size}",
         f"fontcolor={color}",
